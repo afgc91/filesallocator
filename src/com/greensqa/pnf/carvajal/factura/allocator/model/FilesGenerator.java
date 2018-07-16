@@ -1,8 +1,13 @@
 package com.greensqa.pnf.carvajal.factura.allocator.model;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.UnsupportedEncodingException;
+import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -32,11 +37,6 @@ public class FilesGenerator {
 	private String baseFilePath;
 	
 	/**
-	 * Número a partir del cual se empiezan a enumerar los archivos.
-	 */
-	private int startIndex;
-	
-	/**
 	 * Número de archivos que debe haber en cada directorio.
 	 */
 	private int filesPerDirectory;
@@ -46,35 +46,25 @@ public class FilesGenerator {
 	 */
 	private String fileContent;
 	
-	public FilesGenerator(String baseFilePath, String directoriesOutFilePath, int startIndex, int filesPerDirectory) throws IOException {
+	/**
+	 * índice para comenzar con la enumeración de los archivos.
+	 */
+	private int fileIndex;
+	
+	public FilesGenerator(String baseFilePath, String directoriesOutFilePath, int filesPerDirectory, int fileIndex) throws IOException {
 		this.baseFilePath = baseFilePath;
 		this.directoriesOutFilePath = directoriesOutFilePath;
-		this.startIndex = startIndex;
 		this.filesPerDirectory = filesPerDirectory;
+		this.fileIndex = fileIndex;
+		directoriesOut = new ArrayList<>();
 		
-		loadPaths();
+		CarvajalPNFAllocatorUtils.loadPaths(directoriesOutFilePath, directoriesOut);
 		loadBaseFileContent();
 	}
 	
 	/**
-	 * Carga las rutas de los directorios donde deben quedar los archivos.
-	 * @throws IOException
+	 * Convierte el contenido del archivo base a texto, para poder crear las copias idénticas del archivo.
 	 */
-	private void loadPaths() throws IOException {
-		try (FileReader fr = new FileReader(directoriesOutFilePath);
-				BufferedReader br = new BufferedReader(fr);) {
-			String str = "";
-			
-			while (true) {
-				str = br.readLine();
-				if (str == null || str.equals("")) {
-					break;
-				}
-				directoriesOut.add(str);
-			}
-		}
-	}
-	
 	private void loadBaseFileContent() {
 	    StringBuilder contentBuilder = new StringBuilder();
 	    try (Stream<String> stream = Files.lines( Paths.get(baseFilePath), StandardCharsets.UTF_8)) {
@@ -84,6 +74,35 @@ public class FilesGenerator {
 	        e.printStackTrace();
 	    }
 	    fileContent = contentBuilder.toString();
+	}
+	
+	/**
+	 * Inicia la creación y distribución de archivos de prueba en los directorios de salida.
+	 * @throws IOException 
+	 * @throws FileNotFoundException 
+	 * @throws UnsupportedEncodingException 
+	 */
+	public void startFilesGeneration() throws UnsupportedEncodingException, FileNotFoundException, IOException {
+		//int fileIndex = 0;
+		for (int i = 0; i < directoriesOut.size(); i++) {
+			String directory = directoriesOut.get(i);
+			File dir = new File(directory);
+			if (!dir.exists()) {
+				dir.mkdirs();
+			}
+			int numberOfFiles = dir.list().length;
+			if (numberOfFiles < filesPerDirectory) {
+				for (int j = 0; j < filesPerDirectory; j++, fileIndex++) {
+					//Crear archivo
+					//long millis = Calendar.getInstance().getTimeInMillis();
+					String fileName = directory + "\\" + fileIndex + ".xml";
+					String fileText = fileContent.replaceAll("\\HJX[0-9]+", "HJX" + fileIndex);
+					try (Writer writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(fileName), "utf-8"))) {
+						writer.write(fileText);
+					}
+				}
+			}
+		}
 	}
 
 	public String getDirectoriesOutFilePath() {
@@ -110,14 +129,6 @@ public class FilesGenerator {
 		this.baseFilePath = baseFilePath;
 	}
 
-	public int getStartIndex() {
-		return startIndex;
-	}
-
-	public void setStartIndex(int startIndex) {
-		this.startIndex = startIndex;
-	}
-
 	public int getFilesPerDirectory() {
 		return filesPerDirectory;
 	}
@@ -132,5 +143,13 @@ public class FilesGenerator {
 
 	public void setFileContent(String fileContent) {
 		this.fileContent = fileContent;
+	}
+	
+	public int getFileIndex() {
+		return this.fileIndex;
+	}
+	
+	public void setFileIndex(int fileIndex) {
+		this.fileIndex = fileIndex;
 	}
 }
