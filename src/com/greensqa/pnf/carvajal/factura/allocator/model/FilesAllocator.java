@@ -4,6 +4,8 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 
+import org.apache.commons.io.FileUtils;
+
 public class FilesAllocator {
 
 	/**
@@ -112,7 +114,7 @@ public class FilesAllocator {
 		currentStageMessage = "Moviendo archivos (" + currentStage + "/" + STAGES + ")...";
 		currentTaskMessage = "";
 		for (int i = 0; i < directoriesOut.size() && filesInIndex < filesIn.length; i++) {
-			currentStageProgress = (i + 1) * 100 / directoriesOut.size();
+			currentStageProgress = (filesInIndex + 1) * 100 / filesIn.length;
 			String directory = directoriesOut.get(i);
 			File dir = new File(directory);
 			if (!dir.exists()) {
@@ -133,8 +135,10 @@ public class FilesAllocator {
 				File file = new File(fPath);
 				String fileName = file.getName();
 				String newFilePath = directory + "\\" + fileName;
-				currentTaskMessage = "Moviendo archivo \"" + fPath + "\": " + currentStageProgress + "%";
-				file.renameTo(new File(newFilePath));
+				currentStageProgress = (filesInIndex + 1) * 100 / filesIn.length;
+				currentTaskMessage = "Moviendo archivo\nOrigen: \"" + fPath + "\"\nDestino: \"" + newFilePath + "\"\n" + currentStageProgress + "%";
+				//file.renameTo(new File(newFilePath));
+				FileUtils.moveFile(file, new File(newFilePath));
 				//System.out.println("Progress: " + ((filesInIndex + 0.0) / (filesIn.length + 0.0) * 100.0) + "%");
 				filesInIndex += 1;
 			}

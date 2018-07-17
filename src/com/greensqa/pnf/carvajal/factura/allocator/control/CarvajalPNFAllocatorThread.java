@@ -17,5 +17,6 @@ public class CarvajalPNFAllocatorThread extends Thread {
 		while(! fa.getCurrentStageMessage().equals(FilesAllocator.FINISHED_MSG)) {
 			panel.getTasksArea().setText(fa.getCurrentStageMessage() + "\n" + fa.getCurrentTaskMessage());
 		}
+		panel.getTasksArea().setText(fa.getCurrentStageMessage() + "\n" + fa.getCurrentTaskMessage());
 	}
 }
